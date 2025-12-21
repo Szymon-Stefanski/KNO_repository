@@ -7,7 +7,7 @@ from keras.models import Model
 IMAGE_SIZE = (128, 128)
 BATCH_SIZE = 8
 LATENT_DIM = 2
-EPOCHS = 50
+EPOCHS = 100
 
 
 dataset = tf.keras.preprocessing.image_dataset_from_directory(
@@ -46,7 +46,6 @@ class AutoencoderCNN(Model):
             layers.Input(shape=(latent_dim,)),
             layers.Dense(32 * 32 * 64, activation="relu"),
             layers.Reshape((32, 32, 64)),
-            layers.Reshape((32, 32, 64)),
             layers.Conv2DTranspose(64, 3, strides=2, padding="same", activation="relu"),
             layers.Conv2DTranspose(32, 3, strides=2, padding="same", activation="relu"),
             layers.Conv2D(3, 3, padding="same", activation="sigmoid")
@@ -71,25 +70,38 @@ autoencoder.fit(
     epochs=EPOCHS
 )
 
-def show_reconstructions(model, dataset, n=5):
-    for x, _ in dataset.take(1):
+def show_reconstructions(model, dataset):
+    originals = []
+    reconstructions = []
+
+    for x, _ in dataset:
         decoded = model(x)
+        originals.append(x)
+        reconstructions.append(decoded)
 
-        plt.figure(figsize=(10, 4))
-        for i in range(n):
-            plt.subplot(2, n, i + 1)
-            plt.imshow(x[i])
-            plt.axis("off")
-            if i == 0:
-                plt.title("Oryginał")
+    originals = tf.concat(originals, axis=0)
+    reconstructions = tf.concat(reconstructions, axis=0)
 
-            plt.subplot(2, n, i + 1 + n)
-            plt.imshow(decoded[i])
-            plt.axis("off")
-            if i == 0:
-                plt.title("Rekonstrukcja")
+    n = originals.shape[0]
 
-        plt.show()
+    plt.figure(figsize=(2 * n, 4))
+
+    for i in range(n):
+        plt.subplot(2, n, i + 1)
+        plt.imshow(originals[i])
+        plt.axis("off")
+        if i == 0:
+            plt.title("Oryginał")
+
+        plt.subplot(2, n, i + 1 + n)
+        plt.imshow(reconstructions[i])
+        plt.axis("off")
+        if i == 0:
+            plt.title("Rekonstrukcja")
+
+    plt.show()
+
+
 
 show_reconstructions(autoencoder, dataset)
 
